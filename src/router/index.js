@@ -1,15 +1,28 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
+import Login from '../views/Login.vue'
+import Signup from '../views/Signup.vue';
+import AddApplication from '../views/User/AddApplication.vue';
+import MyApplication from '../views/User/MyApplication.vue';
+import AllApplications from '../views/Admin/AllAppliactions.vue';
+
+import Ex from '../views/ex.vue'
 
 Vue.use(VueRouter)
 
 const routes = [
+  {path: '/', name: 'Home', component: Home},
+  {path: '/login', name: 'Login', component: Login},
+  {path: '/signup', name: 'Signup', component: Signup},
+  {path: '/addApplication', name: 'AddApplication', component: AddApplication},
+  {path: '/myApplication', name: 'MyApplication', component: MyApplication},
+  {path: '/allApplications', name: 'AllApplications', component: AllApplications},
   {
-    path: '/',
-    name: 'Home',
-    component: Home
+    path: '/ex', name: 'Ex', component: Ex
   },
+
+
   {
     path: '/about',
     name: 'About',

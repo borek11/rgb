@@ -1,15 +1,70 @@
 <template>
-  <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </div>
-    <router-view/>
-  </div>
+    <div> 
+        <div :is="NavLogged">
+        
+        </div>
+        <b-alert v-model="showDismissibleAlert" variant="danger"  dismissible></b-alert>
+        <b-alert v-model="dismissCountDown" dismissible variant="success">
+          <h4 id="alertSuccess"> </h4>
+          <b-progress variant="success" :max="dismissSecs" :value="dismissCountDown" height="7px"></b-progress>
+        </b-alert>
+        <router-view> </router-view>
+      </div>
 </template>
+<script>  
+import LoggedNav from './views/LoggedNav.vue';
+import UnLoggedNav from './views/UnLoggedNav.vue';
+export default{
+  name: 'App',
+  data(){
+    return{
+      NavLogged: '',
+      showDismissibleAlert:false,
+      dismissCountDown: 0,
+      dismissSecs: 5,
+      alertMessSu: '',
+    }
+  },
+  updated(){
+       this.Logged();
+      this.AlertM();
+    },
+    created(){
+      this.Logged();
+  },
+  methods:{
+      
+      Logged(){
+          if(localStorage.getItem('token') === null){
+              this.NavLogged = UnLoggedNav;
+          }
+          else{
+              this.NavLogged = LoggedNav;
+          }
+      },
+          AlertM(){
+            this.alertMessSu = localStorage.getItem('alertMessSuccess');
+            if(this.alertMessSu != null)
+            {
+                this.showAlert()
+                //  this.showDismissibleAlert = true;
+                this.$nextTick(() => {
+                    document.getElementById('alertSuccess').innerHTML = this.alertMessSu;
+                   localStorage.removeItem('alertMessSuccess'); 
+                   
+               });                
+                             
+            } 
+        },
+        showAlert() { 
+            this.dismissCountDown = this.dismissSecs;
+        },
 
+    }
+}
+</script>
 <style>
-#app {
+/* #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -28,5 +83,5 @@
 
 #nav a.router-link-exact-active {
   color: #42b983;
-}
+} */
 </style>
