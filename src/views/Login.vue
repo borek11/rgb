@@ -38,7 +38,18 @@ export default{
         error: ''
         }
     },
-    
+    created(){
+    //user is not authorized
+    if(localStorage.getItem('token') !== null ){
+        this.$router.push('/');
+        this.$fire({
+            title: "Odmowa",
+            text: "Jesteś już zalogowany",
+            type: "error",
+            })
+    }
+        
+    },
     methods:{
         login(){
             let user = {

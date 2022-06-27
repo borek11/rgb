@@ -54,8 +54,8 @@
                             :fixed="fixed"
                             :filter="filterWaiting"
                             :hover="hover"
-                            :sort-by.sync="sortBy"
-                            :sort-desc.sync="sortDesc"
+                            :sort-by.sync="sortByWaiting"
+                            :sort-desc.sync="sortDescWaiting"
                             :head-variant="headVariant"
                             empty-text="Brak wniosków"
                             show-empty
@@ -134,8 +134,8 @@
                             :fixed="fixed"
                             :filter="filterAccept"
                             :hover="hover"
-                            :sort-by.sync="sortBy"
-                            :sort-desc.sync="sortDesc"
+                            :sort-by.sync="sortByAccepted"
+                            :sort-desc.sync="sortDescAccepted"
                             :head-variant="headVariant"
                             empty-text="Brak wniosków"
                             show-empty
@@ -208,8 +208,8 @@
                             :fixed="fixed"
                             :filter="filterReject"
                             :hover="hover"
-                            :sort-by.sync="sortBy"
-                            :sort-desc.sync="sortDesc"
+                            :sort-by.sync="sortByRejected"
+                            :sort-desc.sync="sortDescRejected"
                             :head-variant="headVariant"
                             empty-text="Brak wniosków"
                             show-empty
@@ -238,17 +238,18 @@
                         </div>
                     </b-tab>
                 </b-tabs>
-                <b-modal id="modalApp" ok-variant="outline-primary" ok-only title="Szczegóły wniosku">
+                <b-modal id="modalApp" ok-variant="outline-primary" v-model="stateModal" ok-only title="Szczegóły wniosku">
                     <p class="my-4">Osoba: <b> {{personName}} </b></p>
                     <p class="my-4">Marka: <b> {{make}} </b></p>
                     <p class="my-4">Model: <b>{{model}}</b></p>
                     <p class="my-4">VIN: <b>{{vin}}</b></p>
                     <p class="my-4">Poj. silnika: <b>{{engineCapacity}}</b></p>
                     <p class="my-4">Dotychczasowy nr rejestracyjny: <b>{{registrationNumber}}</b></p>
-                    <p class="my-4">Żądany nr rejestracyjny: <b>{{desiredRegistrationNumber}}</b></p>
+                    <p class="my-4">{{messageReason}} <b>{{desiredRegistrationNumber}}</b></p>
                     <p class="my-4">Data złożenia wniosku: <b>{{dateAddedApp}}</b></p>
                     <p class="my-4">Data rozpatrzenia wniosku: <b>{{dateFinishedApp}}</b></p>
                     <p class="my-4">Status wniosku: <b>{{statusApplication}}</b></p>
+                    <p v-if="reason != ''" class="my-4">Powód odrzucenia: <b>{{reason}}</b></p>
                 </b-modal>
 
                 <b-modal
@@ -337,28 +338,32 @@ export default{
         currentPageWaiting: 1,
         fieldsWaiting: [],
         filterWaiting: null,
+        sortByWaiting: 'make',
+        sortDescWaiting: false,
         // accepted
         applicationAccepted: [],
         totalRowsAccepted: 1,
         currentPageAccepted: 1,
         fieldsAccepted: [],
         filterAccept: null,
+        sortByAccepted: 'make',
+        sortDescAccepted: false,
         // rejected
         applicationRejected: [],
         totalRowsRejected: 1,
         currentPageRejected: 1,
         fieldsRejected: [],
         filterReject: null,
+        sortByRejected: 'make',
+        sortDescRejected: false,
 
 
         fixed: true,
         striped: true,
         bordered: true,
         hover: true,        
-        sortBrand: true,
         headVariant: 'dark',
-        sortBy: 'brand',
-        sortDesc: false,
+
         totalRows: 1,
         currentPage: 1,
         perPage: 10,
@@ -373,7 +378,8 @@ export default{
         statusApplication: '',
         dateAddedApp: '',
         dateFinishedApp: '',
-
+        messageRejected: '',
+        messageAccepted: '',
         personName: '',
         error: '',
 
@@ -386,6 +392,10 @@ export default{
         messageReject: '',
         messageRejectState: null,
         errorMessage: '',
+
+        stateModal: false,
+        reason: '',
+        messageReason: '',
         }
     },       
     mounted(){
@@ -413,8 +423,8 @@ export default{
     },
     created(){
         //user is not authorized
-        if(localStorage.getItem('token') === null && localStorage.getItem('role') !== "Admin"){
-            this.$router.push('/login');
+        if(localStorage.getItem('token') === null || localStorage.getItem('role') !== "Admin"){
+            this.$router.push('/');
             this.$fire({
                 title: "Odmowa",
                 text: "Dostęp tylko dla autoryzowanych użytkowników",
@@ -423,8 +433,15 @@ export default{
         }
         
     },
-    watch:{
-    },
+    // watch:{
+    //     stateModal: function(value){
+    //         if(value==false){
+    //             this.messageRejected = '';
+    //             this.messageAccepted = '';
+    //         }
+    //         console.log("watch ",value);
+    //     }
+    // },
     computed:{
         nbRegistrationLength: function(){
             if(this.desiredRegistrationNumber.length == 0 || this.desiredRegistrationNumber.length == null){
@@ -438,10 +455,10 @@ export default{
             }                 
         },
         nbMessageLength: function(){
-            if(this.messageReject.length > 200 )
-                return true;
-            else
+            if(this.messageReject.length < 200 &&  this.messageReject.length > 10)
                 return false;
+            else
+                return true;
         },
     },
     methods:{
@@ -455,7 +472,7 @@ export default{
             {headers: {"Authorization": "Bearer " + localStorage.getItem('token')}
             })
             .then(res => {
-                console.log(res.data);
+                // console.log(res.data);
                 this.applicationWaiting = res.data;
                 this.totalRowsWaiting = res.data.length;
                 for(let i = 0; i < this.totalRowsWaiting; i++){
@@ -468,7 +485,7 @@ export default{
             {headers: {"Authorization": "Bearer " + localStorage.getItem('token')}
             })
             .then(res => {
-                console.log(res.data);
+                // console.log(res.data);
                 this.applicationAccepted = res.data;
                 this.totalRowsAccepted = res.data.length;
                 for(let i = 0; i < this.totalRowsAccepted; i++){
@@ -482,7 +499,7 @@ export default{
             {headers: {"Authorization": "Bearer " + localStorage.getItem('token')}
             })
             .then(res => {
-                console.log(res.data);
+                // console.log(res.data);
                 this.applicationRejected = res.data;
                 this.totalRowsRejected = res.data.length;
                 for(let i = 0; i < this.totalRowsRejected; i++){
@@ -497,14 +514,22 @@ export default{
             {headers: {"Authorization": "Bearer " + localStorage.getItem('token')}
             })
             .then(res => {
-                console.log(res.data);            
-                if(res.data.status == 0)
-                this.statusApplication = "Oczekujący";
-                else if(res.data.status == 1)
-                this.statusApplication = "Zaakceptowany";
-                else
-                this.statusApplication = "Odrzucony";
-
+                // console.log(res.data);          
+                this.messageReason = "Żądany nr rejestracyjny:";
+                this.reason = '';  
+                if(res.data.status == 0){
+                    this.statusApplication = "Oczekujący";
+                }
+                else if(res.data.status == 1){
+                    this.statusApplication = "Zaakceptowany";
+                    // this.messageAccepted = res.data.finalRegistrationNumber;
+                    this.messageReason = "Nowy nr rejestracyjny:";
+                }
+                else{
+                    this.statusApplication = "Odrzucony";
+                    this.reason = res.data.reasonRejected;
+                }
+                
                 this.personName = res.data.userDto.firstName + ' ' + res.data.userDto.lastName;
                 this.make = res.data.vehicle.make;
                 this.model = res.data.vehicle.model;       
@@ -512,18 +537,20 @@ export default{
                 this.registrationNumber = res.data.vehicle.registrationNumber;
                 this.engineCapacity = res.data.vehicle.engineCapacity;
                 res.data.finalRegistrationNumber == null? this.desiredRegistrationNumber = "Nie podano" : this.desiredRegistrationNumber = res.data.finalRegistrationNumber;                
+                res.data.dateFinished != null? this.dateFinishedApp = this.Format_date(res.data.dateFinished): this.dateFinishedApp = "Nie rozpatrzono";
                 this.dateAddedApp = this.Format_date(res.data.dateAdded);
-                res.data.dateFinished != null? this.dateFinishedApp = this.Format_date(res.data.dateFinished): this.dateFinishedApp = "Nie rozpatrzono"; 
+
                 this.$bvModal.show("modalApp")
+                // console.log(this.stateModal);
             })
-            console.log(id);
+            // console.log(id);
         },
         AcceptApplication(id){
             axios.get('https://localhost:5001/app/api/Application/'+id,
             {headers: {"Authorization": "Bearer " + localStorage.getItem('token')}
             })
             .then(res => {
-                console.log(res.data);            
+                // console.log(res.data);            
                 if(res.data.status == 0)
                 this.statusApplication = "Oczekujący";
                 else if(res.data.status == 1)
@@ -547,7 +574,7 @@ export default{
             {headers: {"Authorization": "Bearer " + localStorage.getItem('token')}
             })
             .then(res => {
-                console.log(res.data);            
+                // console.log(res.data);            
                 if(res.data.status == 0)
                 this.statusApplication = "Oczekujący";
                 else if(res.data.status == 1)
@@ -595,7 +622,6 @@ export default{
             }
             
             this.errorNbRegistration = "";
-            console.log("oky");
             // Hide the modal manually
             this.$nextTick(() => {
             let acceptApplication = {
@@ -607,14 +633,13 @@ export default{
                 }} ).then(res => {
                     //if successfull
                     if(res.status === 200){
-                        console.log(res);
+                        // console.log(res);
                         // localStorage.setItem('alertMessSuccess',"Pomyślnie Dodano.");
                         this.LoadData();
                     }
-                    console.log(res);
                     this.error = '';
                 },err => {
-                    console.log(err.response);
+                    // console.log(err.response);
                     this.error = err.response.data.errors.Name[0];
                   })
 
@@ -625,7 +650,7 @@ export default{
             // Exit when the form isn't valid
             if (this.nbMessageLength) {
                 this.messageRejectState = false
-                this.errorMessage = "Treść nie może przekroczyć 200 znaków";
+                this.errorMessage = "Powód musi mieć od 10 do 200 znaków";
                 return
             }
             
@@ -642,11 +667,9 @@ export default{
                 }} ).then(res => {
                     //if successfull
                     if(res.status === 200){
-                        console.log(res);
                         // localStorage.setItem('alertMessSuccess',"Pomyślnie Dodano.");
                         this.LoadData();
                     }
-                    console.log(res);
                     this.error = '';
                 },err => {
                     console.log(err.response);

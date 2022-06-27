@@ -13,7 +13,7 @@
         <b-nav-item v-if="isAdmin" ><router-link to="/allApplications" class="text-light"> Wnioski </router-link></b-nav-item>
         <b-nav-item v-if="!isAdmin" ><router-link to="/addApplication" class="text-light"> Zarejestruj samochód </router-link></b-nav-item>
         <b-nav-item v-if="!isAdmin" ><router-link to="/myApplication" class="text-light"> Moje wnioski </router-link></b-nav-item>
-
+        
       </b-navbar-nav>
 
       <!-- Right aligned nav items -->
@@ -41,7 +41,6 @@ export default{
             name: '',
             email: '',
             isAdmin: false,
-            isUser: false,
             myName: '',
             role: '',
         }
@@ -60,15 +59,14 @@ export default{
 
     },
     mounted(){
-        this.name = localStorage.getItem('myLogin');
-        this.email = this.$store.state.mail;
-        console.log(this.$store.state.nick)
+        // this.name = localStorage.getItem('myLogin');
+        // this.email = this.$store.state.mail;
+        // console.log(this.$store.state.nick)
     },
     methods: {
         logout(){
             localStorage.clear();
             this.isAdmin = false;
-            this.isUser = false;
             this.$router.push('/login');
         },
         pokaz(){

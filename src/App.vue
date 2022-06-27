@@ -1,5 +1,5 @@
 <template>
-    <div> 
+    <div class="MainDiv"> 
         <div :is="NavLogged">
         
         </div>

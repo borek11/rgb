@@ -54,16 +54,28 @@ export default {
             error: ''
         }
     },
+    created(){
+    //user is not authorized
+    if(localStorage.getItem('token') !== null ){
+        this.$router.push('/');
+        this.$fire({
+            title: "Odmowa",
+            text: "Jesteś już zalogowany",
+            type: "error",
+            })
+    }
+        
+    },
     methods: {
         signup(){
             this.error = '';
             let newUser = {
-            email: this.email,
-            password: this.password,
-            passwordConfirm: this.confirmPassword,
-            firstName: this.firstName,            
-            lastName: this.lastName,
-            role: this.selectedRole? "Admin" : "user",
+                email: this.email,
+                password: this.password,
+                passwordConfirm: this.confirmPassword,
+                firstName: this.firstName,            
+                lastName: this.lastName,
+                role: this.selectedRole? "Admin" : "User",
             }
             if(this.firstName == "" || this.lastName == "" || this.email == "" || this.password == "" || this.confirmPassword == ""){
                 this.error = "Uzupełnij wszystkie pola";

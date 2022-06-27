@@ -33,8 +33,8 @@
           </b-col>
           <b-col lg="6" class="my-1">
             <b-form-group
-              label=""
-              description="Status wniosku"
+              label="Status wniosku"
+              description=""
               label-cols-sm="3"
               label-align-sm="right"
               label-size="sm"
@@ -46,9 +46,9 @@
                 :aria-describedby="ariaDescribedby"
                 class="mt-1"
               >
-                <b-form-checkbox value="0">Oczekujący</b-form-checkbox>
-                <b-form-checkbox value="1">Zaakceptowany</b-form-checkbox>
-                <b-form-checkbox value="2">Odrzucony</b-form-checkbox>
+                <b-form-checkbox value="Oczekujący">Oczekujący</b-form-checkbox>
+                <b-form-checkbox value="Zaakceptowany">Zaakceptowany</b-form-checkbox>
+                <b-form-checkbox value="Odrzucony">Odrzucony</b-form-checkbox>
               </b-form-checkbox-group>
             </b-form-group>
           </b-col>
@@ -121,12 +121,13 @@
         <p class="my-4">Marka: <b> {{make}} </b></p>
         <p class="my-4">Model: <b>{{model}}</b></p>
         <p class="my-4">VIN: <b>{{vin}}</b></p>
-        <p class="my-4">Poj. silnika: <b>{{engineCapacity}}</b></p>
+        <p class="my-4">Poj. silnika [cm<sup>3</sup>]: <b>{{engineCapacity}}</b></p>
         <p class="my-4">Dotychczasowy nr rejestracyjny: <b>{{registrationNumber}}</b></p>
-        <p class="my-4">Żądany nr rejestracyjny: <b>{{desiredRegistrationNumber}}</b></p>
+        <p class="my-4">{{messageReason}} <b>{{desiredRegistrationNumber}}</b></p>
         <p class="my-4">Data złożenia wniosku: <b>{{dateAddedApp}}</b></p>
         <p class="my-4">Data rozpatrzenia wniosku: <b>{{dateFinishedApp}}</b></p>
         <p class="my-4">Status wniosku: <b>{{statusApplication}}</b></p>
+        <p v-if="reason != ''" class="my-4">Powód odrzucenia: <b>{{reason}}</b></p>
     </b-modal>
 </div>
 </template>
@@ -151,13 +152,13 @@ export default{
         filter: null,
         sortBrand: true,
         headVariant: 'dark',
-        sortBy: 'brand',
+        sortBy: 'make',
         sortDesc: false,
         totalRows: 1,
         currentPage: 1,
         pageOptions: [3, 10, 15, { value: 100, text: "100" }],
         perPage: 10,
-        filterOn: ["0","1","2"],
+        filterOn: ["Oczekujący","Zaakceptowany","Odrzucony"],
         //data for modal
         make: '',
         model: '',       
@@ -169,6 +170,9 @@ export default{
         dateAddedApp: '',
         dateFinishedApp: '',
         error: '',
+
+        reason: '',
+        messageReason: '',
 
         }
     },
@@ -193,6 +197,8 @@ export default{
     mounted(){
         this.fields = [
             {key: 'make',sortable: true, label: 'Marka'},
+            {key: 'model',sortable: true, label: 'Model'},
+            {key: 'status',sortable: true, label: 'Status'},
             {key: 'dateAdded',sortable: false, label: 'Data złożenia'},
             {key: 'details',sortable: false, label: 'Szczegóły'},
         ];
@@ -204,11 +210,21 @@ export default{
         {headers: {"Authorization": "Bearer " + localStorage.getItem('token')}
         })
         .then(res => {
-            console.log(res.data);
+            // console.log(res.data);
             this.applicationsSource = res.data;
             this.totalRows = res.data.length;
             for(let i = 0; i < this.totalRows; i++){
               this.applicationsSource[i].dateAdded = this.Format_date(this.applicationsSource[i].dateAdded);
+              
+              if(this.applicationsSource[i].status == 0)
+                this.applicationsSource[i].status  = "Oczekujący";
+
+              else if(this.applicationsSource[i].status  == 1)
+                this.applicationsSource[i].status  = "Zaakceptowany"; 
+
+              else 
+                this.applicationsSource[i].status  = "Odrzucony";
+
             }
             this.applications = this.applicationsSource;
         })
@@ -221,21 +237,30 @@ export default{
         {headers: {"Authorization": "Bearer " + localStorage.getItem('token')}
         })
         .then(res => {
-            console.log(res.data);            
-            if(res.data.status == 0)
+            // console.log(res.data);            
+            this.messageReason = "Żądany nr rejestracyjny:";
+            this.reason = '';
+            
+            if(res.data.status == 0){
               this.statusApplication = "Oczekujący";
-            else if(res.data.status == 1)
-              this.statusApplication = "Zaakceptowany";
-            else
+            }
+            else if(res.data.status == 1){
+              this.statusApplication = "Zaakceptowany"; 
+              this.messageReason = "Nowy nr rejestracyjny:";
+            }
+            else{
               this.statusApplication = "Odrzucony";
-
+              this.reason = res.data.reasonRejected;
+            }
+            
+            
             this.make = res.data.vehicle.make;
             this.model = res.data.vehicle.model;       
             this.vin = res.data.vehicle.vin; 
             this.registrationNumber = res.data.vehicle.registrationNumber;
             this.engineCapacity = res.data.vehicle.engineCapacity;
-            this.desiredRegistrationNumber = res.data.finalRegistrationNumber;
             this.dateAddedApp = this.Format_date(res.data.dateAdded);
+            res.data.finalRegistrationNumber == null? this.desiredRegistrationNumber = "Nie podano" : this.desiredRegistrationNumber = res.data.finalRegistrationNumber;                
             res.data.dateFinished != null? this.dateFinishedApp = this.Format_date(res.data.dateFinished): this.dateFinishedApp = "Nie rozpatrzono"; 
             this.$bvModal.show("modalApp")
         })

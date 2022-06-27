@@ -29,7 +29,7 @@
 
              <div class="text-center ">
                 <b-button pill  @click="save" class="mt-4" variant="outline-success">Zapisz </b-button><br>
-                <b-button pill  @click="goBack()" class="mt-4" variant="outline-warning">Wróc </b-button><br>
+                <!-- <b-button pill  @click="goBack()" class="mt-4" variant="outline-warning">Wróc </b-button><br> -->
             </div>
             <h6 class="text-danger text-center mt-1 pb-4"> {{ error }} </h6>   
         </div>
@@ -76,8 +76,8 @@ export default{
                      this.error = "Model powinien mieć od 2 do 30 znaków!";
             else if (this.vin.length != 1)
                      this.error = "VIN musi mieć 17 znaków!";
-            else if (this.engineCapacity < 51 || this.engineCapacity > 10000)
-                    this.error = "Rok założenia musi mieścić się od 50 do 10000!";
+            else if (this.engineCapacity < 500 || this.engineCapacity > 100000)
+                    this.error = "Pojemność silnika  musi mieścić się od 500 do 100000!";
             else if (this.registrationNumber.length < 3 || this.registrationNumber.length > 8)
                      this.error = "Nr rejestracyjny powinien się składać od 3 do 8 znaków";
             else{
@@ -104,7 +104,6 @@ export default{
                         this.error = '';
                     },err => {
                         console.log(err.response);
-                        this.error = err.response.data.errors.Name[0];
                     })
             }
         },
